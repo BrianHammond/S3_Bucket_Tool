@@ -281,8 +281,8 @@ class SettingsManager:
         size = self.settings.value('window_size', None)
         pos = self.settings.value('window_pos', None)
         dark = self.settings.value('dark_mode')
-        combo_region = self.settings.value('combo_region')
-        bucket = self.settings.value('bucket')
+        aws_region = self.settings.value('aws_region')
+        s3_bucket = self.settings.value('s3_bucket')
         encrypted_access_key = self.settings.value('access_key')
         encrypted_secret_key = self.settings.value('secret_key')
 
@@ -293,14 +293,14 @@ class SettingsManager:
         if dark == 'true':
             self.main_window.action_dark_mode.setChecked(True)
             self.main_window.setStyleSheet(qdarkstyle.load_stylesheet_pyside6())
-        if combo_region is not None:
-            index = self.main_window.combo_region.findText(combo_region)
+        if aws_region is not None:
+            index = self.main_window.combo_region.findText(aws_region)
             if index >= 0:
                 self.main_window.combo_region.setCurrentIndex(index)
             else:
                 self.main_window.combo_region.setCurrentIndex(0)
-        if bucket is not None:
-            self.main_window.line_bucket_name.setText(bucket)
+        if s3_bucket is not None:
+            self.main_window.line_bucket_name.setText(s3_bucket)
         if encrypted_access_key is not None:
             access_key = self.decrypt_text(encrypted_access_key)
             if access_key:
@@ -318,8 +318,8 @@ class SettingsManager:
         self.settings.setValue('window_size', self.main_window.size())
         self.settings.setValue('window_pos', self.main_window.pos())
         self.settings.setValue('dark_mode', self.main_window.action_dark_mode.isChecked())
-        self.settings.setValue('combo_region', self.main_window.combo_region.currentText())
-        self.settings.setValue('bucket', self.main_window.line_bucket_name.text())
+        self.settings.setValue('aws_region', self.main_window.combo_region.currentText())
+        self.settings.setValue('s3_bucket', self.main_window.line_bucket_name.text())
         access_key = self.main_window.line_access_key.text()
         secret_key = self.main_window.line_secret_key.text()
         self.settings.setValue('access_key', self.encrypt_text(access_key))
