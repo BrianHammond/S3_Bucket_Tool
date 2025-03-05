@@ -92,6 +92,7 @@ class MainWindow(QMainWindow, main_ui):
                 if os.path.isfile(local_file_path):  # Ensure it's a file
                     s3_file_name = os.path.basename(local_file_path)
                     self.upload_file(local_file_path, s3_file_name)
+                    QMessageBox.information(self, "Upload", f"Uploading {s3_file_name} to bucket")
                     uploaded_files.append(s3_file_name)
             
             if uploaded_files:
@@ -134,7 +135,6 @@ class MainWindow(QMainWindow, main_ui):
         if self.s3 is None:
             QMessageBox.warning(self, "Not Connected", "Please connect to AWS S3 first.")
             return
-
         file_path, _ = QFileDialog.getOpenFileName(self, "Select File to Upload", "", "All Files (*)")
         if file_path:
             s3_file_name = os.path.basename(file_path)
