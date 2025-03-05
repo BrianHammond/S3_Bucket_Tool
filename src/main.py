@@ -1,19 +1,24 @@
 import sys
 import qdarkstyle
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMessageBox, QTableWidget, QTableWidgetItem, QFileDialog
-from PySide6.QtCore import QSettings, Qt
+from PySide6.QtCore import QSettings, Qt, QMimeData
+from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from main_ui import Ui_MainWindow as main_ui
 from about_ui import Ui_Form as about_ui
 import boto3
 from botocore.exceptions import ClientError
 from cryptography.fernet import Fernet
 import base64
+import os
 
 class MainWindow(QMainWindow, main_ui):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.settings_manager = SettingsManager(self)
+
+        # Enable drag-and-drop
+        self.setAcceptDrops(True)
 
         # Populate combo_region with regions
         self.combo_region.addItems([
@@ -47,10 +52,9 @@ class MainWindow(QMainWindow, main_ui):
             "me-central-1 (UAE)",
             "af-south-1 (Cape Town)",
             "il-central-1 (Tel Aviv)",
-            # Add more regions as needed
         ])
 
-        self.settings_manager.load_settings()  # Load settings after combo_region is populated
+        self.settings_manager.load_settings()
 
         # S3 client (will be initialized on connect)
         self.s3 = None
@@ -67,6 +71,35 @@ class MainWindow(QMainWindow, main_ui):
         self.button_download.clicked.connect(self.download_from_bucket)
         self.button_delete.clicked.connect(self.delete_from_bucket)
         self.button_query.clicked.connect(self.query_bucket)
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        """Handle drag enter event to accept files."""
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event: QDropEvent):
+        """Handle drop event to upload dropped files to S3."""
+        if self.s3 is None:
+            QMessageBox.warning(self, "Not Connected", "Please connect to AWS S3 first.")
+            event.ignore()
+            return
+
+        mime_data = event.mimeData()
+        if mime_data.hasUrls():
+            uploaded_files = []
+            for url in mime_data.urls():
+                local_file_path = url.toLocalFile()
+                if os.path.isfile(local_file_path):  # Ensure it's a file
+                    s3_file_name = os.path.basename(local_file_path)
+                    self.upload_file(local_file_path, s3_file_name)
+                    uploaded_files.append(s3_file_name)
+            
+            if uploaded_files:
+                self.query_bucket()  # Refresh the table after upload
+                QMessageBox.information(self, "Upload Success", f"Uploaded {len(uploaded_files)} file(s): {', '.join(uploaded_files)}")
+            event.acceptProposedAction()
+        else:
+            event.ignore()
 
     def aws_connect(self):
         access_key = self.line_access_key.text().strip()
@@ -105,7 +138,7 @@ class MainWindow(QMainWindow, main_ui):
 
         file_path, _ = QFileDialog.getOpenFileName(self, "Select File to Upload", "", "All Files (*)")
         if file_path:
-            s3_file_name = file_path.split('/')[-1]
+            s3_file_name = os.path.basename(file_path)
             self.upload_file(file_path, s3_file_name)
             self.query_bucket()
 
@@ -114,25 +147,20 @@ class MainWindow(QMainWindow, main_ui):
             QMessageBox.warning(self, "Not Connected", "Please connect to AWS S3 first.")
             return
 
-        # Get all selected cells
         selected_indexes = self.table.selectedIndexes()
         if not selected_indexes:
             QMessageBox.warning(self, "No Selection", "Please select at least one cell to download its object.")
             return
 
-        # Extract unique row indices from selected cells
         selected_rows = sorted(set(index.row() for index in selected_indexes))
-
-        # Download each selected object
         downloaded_files = []
         for row_index in selected_rows:
-            s3_file_name = self.table.item(row_index, 0).text()  # Column 0 is "Name"
-            if s3_file_name in ["Bucket is empty", "Error listing bucket"]:  # Skip placeholders
+            s3_file_name = self.table.item(row_index, 0).text()
+            if s3_file_name in ["Bucket is empty", "Error listing bucket"]:
                 continue
 
-            # Prompt user for save location, defaulting to the S3 file name
             local_file_path, _ = QFileDialog.getSaveFileName(self, f"Save {s3_file_name}", s3_file_name, "All Files (*)")
-            if not local_file_path:  # User canceled the dialog
+            if not local_file_path:
                 continue
 
             try:
@@ -140,7 +168,7 @@ class MainWindow(QMainWindow, main_ui):
                 downloaded_files.append(local_file_path)
             except ClientError as e:
                 QMessageBox.critical(self, "Download Error", f"Error downloading {s3_file_name}: {e}")
-                return  # Stop if an error occurs
+                return
 
         if downloaded_files:
             QMessageBox.information(self, "Download Success", f"Downloaded {len(downloaded_files)} object(s) to: {', '.join(downloaded_files)}")
@@ -205,35 +233,30 @@ class MainWindow(QMainWindow, main_ui):
         self.table.setRowCount(0)
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(['Name', 'Type', 'Last Modified', 'Size', 'Storage Class'])
-        # Set selection behavior to select rows, but we'll restrict interaction to "Name" column
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.MultiSelection)
-        # Optionally, disable focus on non-Name columns to prevent clicking
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers)  # Prevent editing
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
     def populate_table(self, row, filename, filetype, modified, size, storage_class):
         self.table.insertRow(row)
-        
-        # "Name" column (selectable)
         name_item = QTableWidgetItem(filename)
-        name_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)  # Selectable and enabled
+        name_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
         self.table.setItem(row, 0, name_item)
         
-        # Other columns (non-selectable)
         type_item = QTableWidgetItem(filetype)
-        type_item.setFlags(Qt.ItemIsEnabled)  # Enabled but not selectable
+        type_item.setFlags(Qt.ItemIsEnabled)
         self.table.setItem(row, 1, type_item)
         
         modified_item = QTableWidgetItem(modified)
-        modified_item.setFlags(Qt.ItemIsEnabled)  # Enabled but not selectable
+        modified_item.setFlags(Qt.ItemIsEnabled)
         self.table.setItem(row, 2, modified_item)
         
         size_item = QTableWidgetItem(size)
-        size_item.setFlags(Qt.ItemIsEnabled)  # Enabled but not selectable
+        size_item.setFlags(Qt.ItemIsEnabled)
         self.table.setItem(row, 3, size_item)
         
         storage_item = QTableWidgetItem(storage_class)
-        storage_item.setFlags(Qt.ItemIsEnabled)  # Enabled but not selectable
+        storage_item.setFlags(Qt.ItemIsEnabled)
         self.table.setItem(row, 4, storage_item)
         
         self.table.resizeColumnsToContents()
@@ -280,21 +303,18 @@ class SettingsManager:
     def __init__(self, main_window):
         self.main_window = main_window
         self.settings = QSettings('settings.ini', QSettings.IniFormat)
-        # Load or generate the encryption key
         self.key = self.settings.value('encryption_key', None)
         if self.key is None:
-            self.key = Fernet.generate_key()  # Generate a new key if none exists
-            self.settings.setValue('encryption_key', self.key.decode())  # Store as string
+            self.key = Fernet.generate_key()
+            self.settings.setValue('encryption_key', self.key.decode())
         self.cipher = Fernet(self.key)
 
     def encrypt_text(self, text):
-        """Encrypt the given text using Fernet."""
         if not text:
             return None
         return self.cipher.encrypt(text.encode()).decode()
 
     def decrypt_text(self, encrypted_text):
-        """Decrypt the given encrypted text using Fernet."""
         if not encrypted_text:
             return None
         try:
@@ -332,13 +352,13 @@ class SettingsManager:
             if access_key:
                 self.main_window.line_access_key.setText(access_key)
             else:
-                self.main_window.line_access_key.setText("")  # Handle decryption failure
+                self.main_window.line_access_key.setText("")
         if encrypted_secret_key is not None:
             secret_key = self.decrypt_text(encrypted_secret_key)
             if secret_key:
                 self.main_window.line_secret_key.setText(secret_key)
             else:
-                self.main_window.line_secret_key.setText("")  # Handle decryption failure
+                self.main_window.line_secret_key.setText("")
 
     def save_settings(self):
         self.settings.setValue('window_size', self.main_window.size())

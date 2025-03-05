@@ -6,5 +6,7 @@ To use this tool you'll need to supply your AWS Access Key, Secret Access Key an
 
 All supported regions as of March 5, 2025 but you can add more in main.py.
 
+You can even drag-and-drop any file to the UI and it will upload to a bucket.
+
 Best Regards,<br/>
 Brian
