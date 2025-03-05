@@ -96,7 +96,6 @@ class MainWindow(QMainWindow, main_ui):
             
             if uploaded_files:
                 self.query_bucket()  # Refresh the table after upload
-                QMessageBox.information(self, "Upload Success", f"Uploaded {len(uploaded_files)} file(s): {', '.join(uploaded_files)}")
             event.acceptProposedAction()
         else:
             event.ignore()
