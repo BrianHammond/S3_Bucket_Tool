@@ -77,29 +77,55 @@ class MainWindow(QMainWindow, main_ui):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
 
+
     def dropEvent(self, event: QDropEvent):
         """Handle drop event to upload dropped files to S3."""
+        # Check if S3 is connected
         if self.s3 is None:
             QMessageBox.warning(self, "Not Connected", "Please connect to AWS S3 first.")
             event.ignore()
             return
 
+        # Get mime data
         mime_data = event.mimeData()
-        if mime_data.hasUrls():
-            uploaded_files = []
-            for url in mime_data.urls():
-                local_file_path = url.toLocalFile()
-                if os.path.isfile(local_file_path):  # Ensure it's a file
-                    s3_file_name = os.path.basename(local_file_path)
-                    self.upload_file(local_file_path, s3_file_name)
-                    QMessageBox.information(self, "Upload", f"Uploading {s3_file_name} to bucket")
-                    uploaded_files.append(s3_file_name)
-            
-            if uploaded_files:
-                self.query_bucket()  # Refresh the table after upload
-            event.acceptProposedAction()
-        else:
+        
+        # Check if there are URLs; if not, ignore the event
+        if not mime_data.hasUrls():
             event.ignore()
+            return
+
+        # Process each URL
+        uploaded_files = []
+        for url in mime_data.urls():
+            local_file_path = url.toLocalFile()
+            
+            # Skip if not a file
+            if not os.path.isfile(local_file_path):
+                continue
+                
+            s3_file_name = os.path.basename(local_file_path)
+            reply = QMessageBox.question(
+                self, 
+                "Confirm Upload", 
+                f"Do you want to upload {s3_file_name} to the bucket?",
+                QMessageBox.Yes | QMessageBox.No, 
+                QMessageBox.No
+            )
+            
+            # Upload only if user confirms
+            if reply == QMessageBox.Yes:
+                print(f"uploading {s3_file_name} to {self.line_bucket_name.text()}, this may take some time depending on the file size")
+                self.upload_file(local_file_path, s3_file_name)
+                uploaded_files.append(s3_file_name)
+                
+
+        # Refresh table if any files were uploaded
+        if uploaded_files:
+            self.query_bucket()
+        
+        event.acceptProposedAction()
+
+
 
     def aws_connect(self):
         access_key = self.line_access_key.text().strip()
