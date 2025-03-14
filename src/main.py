@@ -65,7 +65,7 @@ class MainWindow(QMainWindow, main_ui):
         self.action_about_qt.triggered.connect(self.about_qt)
 
         # Buttons
-        self.button_connect.clicked.connect(self.aws_connect)
+        self.button_connect.clicked.connect(self.connect_to_aws)
         self.button_upload.clicked.connect(self.upload_to_bucket)
         self.button_download.clicked.connect(self.download_from_bucket)
         self.button_delete.clicked.connect(self.delete_from_bucket)
@@ -122,7 +122,7 @@ class MainWindow(QMainWindow, main_ui):
         
         event.acceptProposedAction()
 
-    def aws_connect(self):
+    def connect_to_aws(self):
         access_key = self.line_access_key.text().strip()
         secret_key = self.line_secret_key.text().strip()
         self.bucket_name = self.line_bucket_name.text().strip()
