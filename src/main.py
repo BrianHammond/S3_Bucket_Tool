@@ -1,14 +1,13 @@
 import sys
 import qdarkstyle
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QMessageBox, QTableWidget, QTableWidgetItem, QFileDialog
+from PySide6.QtWidgets import QApplication, QMainWindow, QDialog, QMessageBox, QTableWidget, QTableWidgetItem, QFileDialog
 from PySide6.QtCore import QSettings, Qt, QMimeData
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from main_ui import Ui_MainWindow as main_ui
-from about_ui import Ui_Form as about_ui
+from about_ui import Ui_Dialog as about_ui
 import boto3
 from botocore.exceptions import ClientError
 from cryptography.fernet import Fernet
-import base64
 import os
 
 class MainWindow(QMainWindow, main_ui):
@@ -62,7 +61,7 @@ class MainWindow(QMainWindow, main_ui):
 
         # Menubar
         self.action_dark_mode.toggled.connect(self.dark_mode)
-        self.action_about.triggered.connect(self.show_about)
+        self.action_about.triggered.connect(self.about_window)
         self.action_about_qt.triggered.connect(self.about_qt)
 
         # Buttons
@@ -76,7 +75,6 @@ class MainWindow(QMainWindow, main_ui):
         """Handle drag enter event to accept files."""
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
-
 
     def dropEvent(self, event: QDropEvent):
         """Handle drop event to upload dropped files to S3."""
@@ -117,15 +115,12 @@ class MainWindow(QMainWindow, main_ui):
                 print(f"uploading {s3_file_name} to {self.line_bucket_name.text()}, this may take some time depending on the file size")
                 self.upload_file(local_file_path, s3_file_name)
                 uploaded_files.append(s3_file_name)
-                
 
         # Refresh table if any files were uploaded
         if uploaded_files:
             self.query_bucket()
         
         event.acceptProposedAction()
-
-
 
     def aws_connect(self):
         access_key = self.line_access_key.text().strip()
@@ -146,7 +141,7 @@ class MainWindow(QMainWindow, main_ui):
                 region_name=region
             )
             self.s3.list_buckets()
-            success_message = f"Connected to AWS S3 in region {region}."
+            success_message = f"Connected to {self.bucket_name} in {region}."
             QMessageBox.information(self, "Success", success_message)
             self.label_connection.setText(success_message)
             self.initialize_table()
@@ -313,9 +308,9 @@ class MainWindow(QMainWindow, main_ui):
         else:
             self.setStyleSheet('')
 
-    def show_about(self):
-        self.about_window = AboutWindow(dark_mode=self.action_dark_mode.isChecked())
-        self.about_window.show()
+    def about_window(self): # loads the About window
+        about_window = AboutWindow(dark_mode=self.action_dark_mode.isChecked())
+        about_window.exec()
 
     def about_qt(self):
         QApplication.aboutQt()
@@ -396,12 +391,13 @@ class SettingsManager:
         self.settings.setValue('access_key', self.encrypt_text(access_key))
         self.settings.setValue('secret_key', self.encrypt_text(secret_key))
 
-class AboutWindow(QWidget, about_ui):
+class AboutWindow(QDialog, about_ui): 
     def __init__(self, dark_mode=False):
         super().__init__()
         self.setupUi(self)
         if dark_mode:
             self.setStyleSheet(qdarkstyle.load_stylesheet_pyside6())
+        self.button_ok.clicked.connect(self.accept)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
