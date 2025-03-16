@@ -182,7 +182,6 @@ class MainWindow(QMainWindow, main_ui):
             local_file_path, _ = QFileDialog.getSaveFileName(self, f"Save {s3_file_name}", s3_file_name, "All Files (*)")
             if not local_file_path:
                 continue
-
             try:
                 self.download_file(s3_file_name, local_file_path)
                 downloaded_files.append(local_file_path)
