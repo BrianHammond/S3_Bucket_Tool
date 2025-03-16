@@ -61,8 +61,8 @@ class MainWindow(QMainWindow, main_ui):
 
         # Menubar
         self.action_dark_mode.toggled.connect(self.dark_mode)
-        self.action_about.triggered.connect(self.about_window)
-        self.action_about_qt.triggered.connect(self.about_qt)
+        self.action_about.triggered.connect(lambda: AboutWindow(dark_mode=self.action_dark_mode.isChecked()).exec())
+        self.action_about_qt.triggered.connect(lambda: QApplication.aboutQt())
 
         # Buttons
         self.button_connect.clicked.connect(self.connect_to_aws)
@@ -307,13 +307,6 @@ class MainWindow(QMainWindow, main_ui):
             self.setStyleSheet(qdarkstyle.load_stylesheet_pyside6())
         else:
             self.setStyleSheet('')
-
-    def about_window(self): # loads the About window
-        about_window = AboutWindow(dark_mode=self.action_dark_mode.isChecked())
-        about_window.exec()
-
-    def about_qt(self):
-        QApplication.aboutQt()
 
     def closeEvent(self, event):
         self.settings_manager.save_settings()
