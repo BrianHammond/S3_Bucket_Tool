@@ -246,7 +246,8 @@ class MainWindow(QMainWindow, main_ui):
 
     def query_bucket(self):
         self.initialize_table()
-        self.populate_table_from_bucket()
+        search_term = self.line_search.text().strip().lower()  # Get the search term and normalize it
+        self.populate_table_from_bucket(search_term)
 
     def initialize_table(self):
         self.table.setRowCount(0)
@@ -281,19 +282,25 @@ class MainWindow(QMainWindow, main_ui):
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
 
-    def populate_table_from_bucket(self):
+    def populate_table_from_bucket(self, search_term=""):
         if self.s3 is None:
             return
         try:
             response = self.s3.list_objects_v2(Bucket=self.bucket_name)
+            row = 0
             if 'Contents' in response:
-                for i, obj in enumerate(response['Contents']):
+                for obj in response['Contents']:
                     filename = obj['Key']
-                    filetype = filename.split('.')[-1] if '.' in filename else "Unknown"
-                    modified = str(obj['LastModified'])
-                    size = str(obj['Size'])
-                    storage_class = obj.get('StorageClass', 'STANDARD')
-                    self.populate_table(i, filename, filetype, modified, size, storage_class)
+                    # Filter based on search term (case-insensitive)
+                    if not search_term or search_term in filename.lower():
+                        filetype = filename.split('.')[-1] if '.' in filename else "Unknown"
+                        modified = str(obj['LastModified'])
+                        size = str(obj['Size'])
+                        storage_class = obj.get('StorageClass', 'STANDARD')
+                        self.populate_table(row, filename, filetype, modified, size, storage_class)
+                        row += 1
+                if row == 0:  # If no matches found after filtering
+                    self.populate_table(0, "No matching files found", "-", "-", "-", "-")
             else:
                 self.populate_table(0, "Bucket is empty", "-", "-", "-", "-")
         except ClientError as e:

@@ -27,7 +27,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(728, 460)
+        MainWindow.resize(979, 752)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -54,8 +54,8 @@ class Ui_MainWindow(object):
         self.action_open.setObjectName(u"action_open")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.verticalLayout_2 = QVBoxLayout(self.centralwidget)
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.verticalLayout_3 = QVBoxLayout(self.centralwidget)
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.groupBox = QGroupBox(self.centralwidget)
         self.groupBox.setObjectName(u"groupBox")
         self.verticalLayout = QVBoxLayout(self.groupBox)
@@ -96,25 +96,22 @@ class Ui_MainWindow(object):
         self.verticalLayout.addWidget(self.line_bucket_name)
 
 
-        self.verticalLayout_2.addWidget(self.groupBox)
+        self.verticalLayout_3.addWidget(self.groupBox)
 
-        self.groupBox_2 = QGroupBox(self.centralwidget)
-        self.groupBox_2.setObjectName(u"groupBox_2")
-        self.verticalLayout_3 = QVBoxLayout(self.groupBox_2)
-        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.button_upload = QPushButton(self.groupBox_2)
+        self.horizontalLayout_2.setContentsMargins(9, -1, 9, -1)
+        self.button_upload = QPushButton(self.centralwidget)
         self.button_upload.setObjectName(u"button_upload")
 
         self.horizontalLayout_2.addWidget(self.button_upload)
 
-        self.button_download = QPushButton(self.groupBox_2)
+        self.button_download = QPushButton(self.centralwidget)
         self.button_download.setObjectName(u"button_download")
 
         self.horizontalLayout_2.addWidget(self.button_download)
 
-        self.button_delete = QPushButton(self.groupBox_2)
+        self.button_delete = QPushButton(self.centralwidget)
         self.button_delete.setObjectName(u"button_delete")
 
         self.horizontalLayout_2.addWidget(self.button_delete)
@@ -122,26 +119,35 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addLayout(self.horizontalLayout_2)
 
+        self.groupBox_2 = QGroupBox(self.centralwidget)
+        self.groupBox_2.setObjectName(u"groupBox_2")
+        self.verticalLayout_2 = QVBoxLayout(self.groupBox_2)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.line_search = QLineEdit(self.groupBox_2)
+        self.line_search.setObjectName(u"line_search")
+
+        self.verticalLayout_2.addWidget(self.line_search)
+
         self.button_query = QPushButton(self.groupBox_2)
         self.button_query.setObjectName(u"button_query")
         sizePolicy.setHeightForWidth(self.button_query.sizePolicy().hasHeightForWidth())
         self.button_query.setSizePolicy(sizePolicy)
         self.button_query.setMinimumSize(QSize(100, 0))
 
-        self.verticalLayout_3.addWidget(self.button_query)
+        self.verticalLayout_2.addWidget(self.button_query)
 
         self.table = QTableWidget(self.groupBox_2)
         self.table.setObjectName(u"table")
 
-        self.verticalLayout_3.addWidget(self.table)
+        self.verticalLayout_2.addWidget(self.table)
 
 
-        self.verticalLayout_2.addWidget(self.groupBox_2)
+        self.verticalLayout_3.addWidget(self.groupBox_2)
 
         self.label_connection = QLabel(self.centralwidget)
         self.label_connection.setObjectName(u"label_connection")
 
-        self.verticalLayout_2.addWidget(self.label_connection)
+        self.verticalLayout_3.addWidget(self.label_connection)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QStatusBar(MainWindow)
@@ -149,12 +155,22 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
         self.menuBar = QMenuBar(MainWindow)
         self.menuBar.setObjectName(u"menuBar")
-        self.menuBar.setGeometry(QRect(0, 0, 728, 22))
+        self.menuBar.setGeometry(QRect(0, 0, 979, 22))
         self.menuAbout = QMenu(self.menuBar)
         self.menuAbout.setObjectName(u"menuAbout")
         self.menuSetting = QMenu(self.menuBar)
         self.menuSetting.setObjectName(u"menuSetting")
         MainWindow.setMenuBar(self.menuBar)
+        QWidget.setTabOrder(self.line_access_key, self.line_secret_key)
+        QWidget.setTabOrder(self.line_secret_key, self.combo_region)
+        QWidget.setTabOrder(self.combo_region, self.button_connect)
+        QWidget.setTabOrder(self.button_connect, self.line_bucket_name)
+        QWidget.setTabOrder(self.line_bucket_name, self.button_upload)
+        QWidget.setTabOrder(self.button_upload, self.button_download)
+        QWidget.setTabOrder(self.button_download, self.button_delete)
+        QWidget.setTabOrder(self.button_delete, self.line_search)
+        QWidget.setTabOrder(self.line_search, self.button_query)
+        QWidget.setTabOrder(self.button_query, self.table)
 
         self.menuBar.addAction(self.menuSetting.menuAction())
         self.menuBar.addAction(self.menuAbout.menuAction())
@@ -201,7 +217,6 @@ class Ui_MainWindow(object):
         self.line_bucket_name.setStatusTip(QCoreApplication.translate("MainWindow", u"Enter the name of the bucket you wish to use", None))
 #endif // QT_CONFIG(statustip)
         self.line_bucket_name.setPlaceholderText(QCoreApplication.translate("MainWindow", u"S3 Bucket", None))
-        self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"Files", None))
 #if QT_CONFIG(statustip)
         self.button_upload.setStatusTip(QCoreApplication.translate("MainWindow", u"Upload file to a bucket, drag-and-drop also works", None))
 #endif // QT_CONFIG(statustip)
@@ -214,6 +229,11 @@ class Ui_MainWindow(object):
         self.button_delete.setStatusTip(QCoreApplication.translate("MainWindow", u"Select a file in the table and delete it from the bucket", None))
 #endif // QT_CONFIG(statustip)
         self.button_delete.setText(QCoreApplication.translate("MainWindow", u"Delete", None))
+        self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"Files", None))
+#if QT_CONFIG(statustip)
+        self.line_search.setStatusTip(QCoreApplication.translate("MainWindow", u"Enter the name of the bucket you wish to use", None))
+#endif // QT_CONFIG(statustip)
+        self.line_search.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search for file (blank returns all, not case sensitive)", None))
 #if QT_CONFIG(statustip)
         self.button_query.setStatusTip(QCoreApplication.translate("MainWindow", u"Query the bucket to refresh the table", None))
 #endif // QT_CONFIG(statustip)
